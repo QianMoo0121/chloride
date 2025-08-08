@@ -26,6 +26,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 public class ParticlesMixins {
 
@@ -97,6 +98,16 @@ public class ParticlesMixins {
         @Inject(method = "createParticle", at = @At(value = "HEAD"), cancellable = true)
         public void inject$create(double x, double y, double z, double velocityX, double velocityY, double velocityZ, IntList colors, IntList fadeColors, boolean trail, boolean flicker, CallbackInfo ci) {
             if (ChlorideConfig.disabledParticles.contains(this.getId())) {
+                ci.cancel();
+            }
+        }
+
+        @Inject(method = "createParticle",
+                at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/FireworkParticles$SparkParticle;setTrail(Z)V"),
+                cancellable = true,
+                locals = LocalCapture.CAPTURE_FAILHARD)
+        private void fixCrash(double x, double y, double z, double velocityX, double velocityY, double velocityZ, IntList colors, IntList fadeColors, boolean trail, boolean flicker, CallbackInfo ci, FireworkParticles.SparkParticle spark) {
+            if (spark == null) {
                 ci.cancel();
             }
         }
